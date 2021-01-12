@@ -2,10 +2,13 @@ import re
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib as mpl
+from datetime import datetime
+from ShareTimes import ShareTimes
 
 # Constants
-PLOT_DPI = 300
-AVERAGE_DECIMAL_COUNT = 5
+PLOT_DPI = 300 # The DPI at which the plots are generated
+AVERAGE_DECIMAL_COUNT = 5 # The amount of decimals to display in the plot for the average values
+AVERAGE_TIME_SECONDS_DECIMAL_COUNT = 2 # The amount of decimals to display whenever showing times
 
 
 def readLog(filePaths: [str]):
@@ -28,8 +31,30 @@ def readLog(filePaths: [str]):
 
 	# Print the list of difs
 	difs.sort(reverse=True)
-	print(difs)
-	print("Dev Shares: {}".format(getAmountOfDefShares(lines)))
+	if len(difs) > 10:
+		print("10 best difficulties: {}".format(difs[:10]))
+	else:
+		print("Difficulties: {}".format(difs))
+
+	# Print the number of difs
+	print("# Shares: {}".format(len(difs)))
+	print("# Dev Shares: {}".format(getAmountOfDefShares(lines)))
+
+	# Print the total difficulty of found shares
+	print("Total difficulty: {} GH".format(sum(difs).__round__(AVERAGE_DECIMAL_COUNT)))
+
+	# Get required mining information
+	shareTimes = getAvgTimeForShare(lines)
+
+	# Print the total time spent mining
+	totalMiningSeconds = shareTimes.totalTimeSpentMining
+	totalMiningMinutes = (totalMiningSeconds / 60).__round__(AVERAGE_TIME_SECONDS_DECIMAL_COUNT)
+	totalMiningHours = (totalMiningMinutes / 60).__round__(AVERAGE_TIME_SECONDS_DECIMAL_COUNT)
+	totalMiningDays = (totalMiningHours / 24).__round__(AVERAGE_TIME_SECONDS_DECIMAL_COUNT)
+	print("Total time spent mining: {}s ({}min, {}h, {}d)".format(totalMiningSeconds, totalMiningMinutes, totalMiningHours, totalMiningDays))
+
+	# Get average time per share
+	print("Average time per share in seconds: {}".format(shareTimes.avgTimePerShare.__round__(AVERAGE_TIME_SECONDS_DECIMAL_COUNT)))
 
 
 def getDifficulties(lines: [str]) -> [float]:
@@ -42,6 +67,7 @@ def getDifficulties(lines: [str]) -> [float]:
 	difs: [float] = []
 
 	for line in lines:
+		# Regex matches e.g.: Eth: Share actual difficulty: 28.2 GH
 		regex = re.compile('Eth: Share actual difficulty: [0-9]+([.][0-9])? [A-Z]H')
 
 		matches = re.search(regex, line)
@@ -50,6 +76,7 @@ def getDifficulties(lines: [str]) -> [float]:
 		if matches:
 			currentMatch = matches.group(0)
 
+			# Regex matches e.g.: 28.2
 			difRegex = re.compile('[0-9]+([.][0-9])?')
 
 			difMatch = str(re.search(difRegex, currentMatch).group(0))
@@ -68,6 +95,7 @@ def getDifficulties(lines: [str]) -> [float]:
 					  + " an issue at https://github.com/Mueller-Patrick/PhoenixMinerLogReader/issues")
 
 	return difs
+
 
 def drawPlots(difs: [float]):
 	"""
@@ -143,6 +171,7 @@ def getAmountOfDefShares(lines: [str]) -> int:
 	"""
 	numberOfDevShares = 0
 	for line in lines:
+		# Regex matches e.g.: DevFee: Share actual difficulty: 28.2 GH
 		regex = re.compile('DevFee: Share actual difficulty: [0-9]+([.][0-9])? [A-Z]H')
 
 		matches = re.search(regex, line)
@@ -151,6 +180,50 @@ def getAmountOfDefShares(lines: [str]) -> int:
 			numberOfDevShares += 1
 
 	return numberOfDevShares
+
+
+def getAvgTimeForShare(lines: [str]) -> ShareTimes:
+	numberOfShares = 0  # The number of found shares
+	totalTimeMining = 0  # The total time spent mining to calculate avg per share later
+	lastFoundShareTime = None
+
+	for line in lines:
+		# Regex matches e.g.: Eth: Share actual difficulty: 28.2 GH
+		regex = re.compile('Eth: Share actual difficulty: [0-9]+([.][0-9])? [A-Z]H')
+
+		matches = re.search(regex, line)
+
+		# If line contains details of found share, extract the time when the share was found
+		if matches:
+			# Increase total number of found shares so calculation is right
+			numberOfShares += 1
+
+			# Regex matches e.g.: 2021.01.12:09:00:37
+			datetimeRegex = re.compile('[0-9]{4}\.[0-9]{2}\.[0-9]{2}:[0-9]{2}:[0-9]{2}:[0-9]{2}')
+
+			datetimeString = re.search(datetimeRegex, line).group(0)
+
+			# Parse to datetime format so we can work with it
+			foundDatetime = datetime.strptime(datetimeString, "%Y.%m.%d:%H:%M:%S")
+
+			# Calculate time since the last share was found. If this is the first found share, it is not taken
+			# into consideration which does make the result slightly incorrect but makes it easier to calculate.
+			# TODO: Might be fixed later if I'm in the mood.
+			# TODO: This currently results in wrong numbers when the mining has been paused because the algorithm doesnt
+			# know about mining session. This has to be adjusted by giving this algorithm the files rather than just the
+			# lines in one array
+			if lastFoundShareTime:
+				timeSinceLastShare = (foundDatetime - lastFoundShareTime).total_seconds()
+				totalTimeMining += timeSinceLastShare
+				lastFoundShareTime = foundDatetime
+			else:
+				lastFoundShareTime = foundDatetime
+
+	avgTimePerShare = (totalTimeMining / numberOfShares)
+
+	retShareTime = ShareTimes(avgTimePerShare, totalTimeMining)
+
+	return retShareTime
 
 
 if __name__ == "__main__":
