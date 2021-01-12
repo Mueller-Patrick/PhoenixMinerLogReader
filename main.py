@@ -12,19 +12,16 @@ def readLog(filePaths: [str]):
 	"""
 	Reads the given log file and extracts the difficulty of each found share
 	:param filePaths: The file names of the log files. Have to be in the same directory or the path (abs / rel) has to be given. Has to be an array of strings.
-	:return: Void
 	"""
 	difs = []  # Will be filled with share difficulties in GH
 	lines = []  # Will be filled with the read lines of log
 
 	# Read all log files into the lines list
-	for filePath in filePaths:
-		with open(filePath, "r") as file:
-			lines.extend(file.readlines())
+	lines = readLines(filePaths)
 
 	# Go through every read line
 	for line in lines:
-		regex = re.compile('Share actual difficulty: [0-9]+([.][0-9])? [A-Z]H')
+		regex = re.compile('Eth: Share actual difficulty: [0-9]+([.][0-9])? [A-Z]H')
 
 		matches = re.search(regex, line)
 
@@ -73,9 +70,33 @@ def readLog(filePaths: [str]):
 	# Print the list of difs
 	difs.sort(reverse=True)
 	print(difs)
+	print("Dev Shares: {}".format(getAmountOfDefShares(lines)))
 
 
-def drawPlot(difs, avgVal, top10Avg):
+def readLines(filePaths: [str]) -> [str]:
+	"""
+	Reads the given files and returns a list of lines of all files.
+	Reads the files in the order that they were given.
+	:param filePaths: A list of file paths or file names.
+	:return: A list of strings, each entry representing one line of a file
+	"""
+	lines = []
+
+	for filePath in filePaths:
+		with open(filePath, "r") as file:
+			lines.extend(file.readlines())
+
+	return lines
+
+
+def drawPlot(difs: [float], avgVal: float, top10Avg: float):
+	"""
+	Draw the line graph that shows the difficulty of found shares over time
+
+	:param difs: The array of difficulties
+	:param avgVal: The average of all difficulties
+	:param top10Avg: The average of the top 10 difficulties
+	"""
 	plt.plot(difs)
 	plt.axhline(avgVal, color='r')
 	plt.axhline(top10Avg, color='g')
@@ -86,6 +107,24 @@ def drawPlot(difs, avgVal, top10Avg):
 def drawHistogram(difs):
 	plt.hist(difs, bins=len(difs))
 	plt.show(blcok=True)
+
+
+def getAmountOfDefShares(lines: [str]) -> int:
+	"""
+	Returns the number of shares that went into the algorithm developers account
+	:param lines: The lines of the log files
+	:return: The amount of dev shares
+	"""
+	numberOfDevShares = 0
+	for line in lines:
+		regex = re.compile('DevFee: Share actual difficulty: [0-9]+([.][0-9])? [A-Z]H')
+
+		matches = re.search(regex, line)
+
+		if matches:
+			numberOfDevShares += 1
+
+	return numberOfDevShares
 
 
 if __name__ == "__main__":
