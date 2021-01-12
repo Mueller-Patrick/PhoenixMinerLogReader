@@ -21,7 +21,9 @@ def readLog(filePaths: [str]):
 	lines = []  # Will be filled with the read lines of log
 
 	# Read all log files into the lines list
-	lines = readLines(filePaths)
+	linesPerFile = readLines(filePaths)
+	# Flattens the nested list of lines into one list
+	lines = [line for file in linesPerFile for line in file]
 
 	# Get the difficulties from the lines
 	difs = getDifficulties(lines)
@@ -44,7 +46,7 @@ def readLog(filePaths: [str]):
 	print("Total difficulty: {} GH".format(sum(difs).__round__(AVERAGE_DECIMAL_COUNT)))
 
 	# Get required mining information
-	shareTimes = getAvgTimeForShare(lines)
+	shareTimes = getAvgTimeForShare(linesPerFile)
 
 	# Print the total time spent mining
 	totalMiningSeconds = shareTimes.totalTimeSpentMining
@@ -135,11 +137,11 @@ def readLines(filePaths: [str]) -> [str]:
 	:param filePaths: A list of file paths or file names.
 	:return: A list of strings, each entry representing one line of a file
 	"""
-	lines = []
+	lines = [[]]
 
 	for filePath in filePaths:
 		with open(filePath, "r") as file:
-			lines.extend(file.readlines())
+			lines.append(file.readlines())
 
 	return lines
 
@@ -184,48 +186,50 @@ def getAmountOfDefShares(lines: [str]) -> int:
 	return numberOfDevShares
 
 
-def getAvgTimeForShare(lines: [str]) -> ShareTimes:
+def getAvgTimeForShare(files: [[str]]) -> ShareTimes:
 	"""
 	Calculates the average time spent to find a share. Also returns the total time spent mining
 
-	:param lines: The lines of the log files
+	:param lines: The lines for each given log file
 	:return: A ShareTimes object containing the average time per share and the total mining time
 	"""
 	numberOfShares = 0  # The number of found shares
 	totalTimeMining = 0  # The total time spent mining to calculate avg per share later
-	lastFoundShareTime = None
 
-	for line in lines:
-		# Regex matches e.g.: Eth: Share actual difficulty: 28.2 GH
-		regex = re.compile('Eth: Share actual difficulty: [0-9]+([.][0-9])? [A-Z]H')
+	for file in files:
+		# This resets the lastFoundShareTime every time a new log file is read.
+		# This is to ensure that no wrong results are calculated if there has been an interruption between
+		# two mining sessions
+		lastFoundShareTime = None
 
-		matches = re.search(regex, line)
+		for line in file:
+			# Regex matches e.g.: Eth: Share actual difficulty: 28.2 GH
+			regex = re.compile('Eth: Share actual difficulty: [0-9]+([.][0-9])? [A-Z]H')
 
-		# If line contains details of found share, extract the time when the share was found
-		if matches:
-			# Increase total number of found shares so calculation is right
-			numberOfShares += 1
+			matches = re.search(regex, line)
 
-			# Regex matches e.g.: 2021.01.12:09:00:37
-			datetimeRegex = re.compile('[0-9]{4}\.[0-9]{2}\.[0-9]{2}:[0-9]{2}:[0-9]{2}:[0-9]{2}')
+			# If line contains details of found share, extract the time when the share was found
+			if matches:
+				# Increase total number of found shares so calculation is right
+				numberOfShares += 1
 
-			datetimeString = re.search(datetimeRegex, line).group(0)
+				# Regex matches e.g.: 2021.01.12:09:00:37
+				datetimeRegex = re.compile('[0-9]{4}\.[0-9]{2}\.[0-9]{2}:[0-9]{2}:[0-9]{2}:[0-9]{2}')
 
-			# Parse to datetime format so we can work with it
-			foundDatetime = datetime.strptime(datetimeString, "%Y.%m.%d:%H:%M:%S")
+				datetimeString = re.search(datetimeRegex, line).group(0)
 
-			# Calculate time since the last share was found. If this is the first found share, it is not taken
-			# into consideration which does make the result slightly incorrect but makes it easier to calculate.
-			# TODO: Might be fixed later if I'm in the mood.
-			# TODO: This currently results in wrong numbers when the mining has been paused because the algorithm doesnt
-			# know about mining session. This has to be adjusted by giving this algorithm the files rather than just the
-			# lines in one array
-			if lastFoundShareTime:
-				timeSinceLastShare = (foundDatetime - lastFoundShareTime).total_seconds()
-				totalTimeMining += timeSinceLastShare
-				lastFoundShareTime = foundDatetime
-			else:
-				lastFoundShareTime = foundDatetime
+				# Parse to datetime format so we can work with it
+				foundDatetime = datetime.strptime(datetimeString, "%Y.%m.%d:%H:%M:%S")
+
+				# Calculate time since the last share was found. If this is the first found share, it is not taken
+				# into consideration which does make the result slightly incorrect but makes it easier to calculate.
+				# TODO: Might be fixed later if I'm in the mood.
+				if lastFoundShareTime:
+					timeSinceLastShare = (foundDatetime - lastFoundShareTime).total_seconds()
+					totalTimeMining += timeSinceLastShare
+					lastFoundShareTime = foundDatetime
+				else:
+					lastFoundShareTime = foundDatetime
 
 	avgTimePerShare = (totalTimeMining / numberOfShares)
 
