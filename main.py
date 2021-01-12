@@ -11,6 +11,7 @@ AVERAGE_DECIMAL_COUNT = 5
 def readLog(filePaths: [str]):
 	"""
 	Reads the given log file and extracts the difficulty of each found share
+
 	:param filePaths: The file names of the log files. Have to be in the same directory or the path (abs / rel) has to be given. Has to be an array of strings.
 	"""
 	difs = []  # Will be filled with share difficulties in GH
@@ -19,7 +20,27 @@ def readLog(filePaths: [str]):
 	# Read all log files into the lines list
 	lines = readLines(filePaths)
 
-	# Go through every read line
+	# Get the difficulties from the lines
+	difs = getDifficulties(lines)
+
+	# Calculate average values and draw plots
+	drawPlots(difs)
+
+	# Print the list of difs
+	difs.sort(reverse=True)
+	print(difs)
+	print("Dev Shares: {}".format(getAmountOfDefShares(lines)))
+
+
+def getDifficulties(lines: [str]) -> [float]:
+	"""
+	Reads the given log lines and extracts the difficulties of the found shares.
+
+	:param lines: The lines of the log files
+	:return: The list of difficulties as float. Difficulties are calculated into GH.
+	"""
+	difs: [float] = []
+
 	for line in lines:
 		regex = re.compile('Eth: Share actual difficulty: [0-9]+([.][0-9])? [A-Z]H')
 
@@ -46,6 +67,14 @@ def readLog(filePaths: [str]):
 				print("Found something other than MH / GH / TH. Please verify that this is correct and report it as"
 					  + " an issue at https://github.com/Mueller-Patrick/PhoenixMinerLogReader/issues")
 
+	return difs
+
+def drawPlots(difs: [float]):
+	"""
+	Calculates required values and then draws the plot for the difficulties of the found shares
+
+	:param difs: The list of difficulties
+	"""
 	# Calculate average value
 	sum = 0
 	for entry in difs:
@@ -67,16 +96,12 @@ def readLog(filePaths: [str]):
 	drawPlot(difs, avgVal, top10Avg)
 	drawHistogram(difs)
 
-	# Print the list of difs
-	difs.sort(reverse=True)
-	print(difs)
-	print("Dev Shares: {}".format(getAmountOfDefShares(lines)))
-
 
 def readLines(filePaths: [str]) -> [str]:
 	"""
 	Reads the given files and returns a list of lines of all files.
 	Reads the files in the order that they were given.
+
 	:param filePaths: A list of file paths or file names.
 	:return: A list of strings, each entry representing one line of a file
 	"""
@@ -112,6 +137,7 @@ def drawHistogram(difs):
 def getAmountOfDefShares(lines: [str]) -> int:
 	"""
 	Returns the number of shares that went into the algorithm developers account
+
 	:param lines: The lines of the log files
 	:return: The amount of dev shares
 	"""
