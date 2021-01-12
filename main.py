@@ -6,9 +6,9 @@ from datetime import datetime
 from ShareTimes import ShareTimes
 
 # Constants
-PLOT_DPI = 300 # The DPI at which the plots are generated
-AVERAGE_DECIMAL_COUNT = 5 # The amount of decimals to display in the plot for the average values
-AVERAGE_TIME_SECONDS_DECIMAL_COUNT = 2 # The amount of decimals to display whenever showing times
+PLOT_DPI = 300  # The DPI at which the plots are generated
+AVERAGE_DECIMAL_COUNT = 5  # The amount of decimals to display in the plot for the average values
+AVERAGE_TIME_SECONDS_DECIMAL_COUNT = 2  # The amount of decimals to display whenever showing times
 
 
 def readLog(filePaths: [str]):
@@ -51,10 +51,12 @@ def readLog(filePaths: [str]):
 	totalMiningMinutes = (totalMiningSeconds / 60).__round__(AVERAGE_TIME_SECONDS_DECIMAL_COUNT)
 	totalMiningHours = (totalMiningMinutes / 60).__round__(AVERAGE_TIME_SECONDS_DECIMAL_COUNT)
 	totalMiningDays = (totalMiningHours / 24).__round__(AVERAGE_TIME_SECONDS_DECIMAL_COUNT)
-	print("Total time spent mining: {}s ({}min, {}h, {}d)".format(totalMiningSeconds, totalMiningMinutes, totalMiningHours, totalMiningDays))
+	print("Total time spent mining: {}s ({}min, {}h, {}d)".format(totalMiningSeconds, totalMiningMinutes,
+																  totalMiningHours, totalMiningDays))
 
 	# Get average time per share
-	print("Average time per share in seconds: {}".format(shareTimes.avgTimePerShare.__round__(AVERAGE_TIME_SECONDS_DECIMAL_COUNT)))
+	print("Average time per share in seconds: {}".format(
+		shareTimes.avgTimePerShare.__round__(AVERAGE_TIME_SECONDS_DECIMAL_COUNT)))
 
 
 def getDifficulties(lines: [str]) -> [float]:
@@ -183,6 +185,12 @@ def getAmountOfDefShares(lines: [str]) -> int:
 
 
 def getAvgTimeForShare(lines: [str]) -> ShareTimes:
+	"""
+	Calculates the average time spent to find a share. Also returns the total time spent mining
+
+	:param lines: The lines of the log files
+	:return: A ShareTimes object containing the average time per share and the total mining time
+	"""
 	numberOfShares = 0  # The number of found shares
 	totalTimeMining = 0  # The total time spent mining to calculate avg per share later
 	lastFoundShareTime = None
