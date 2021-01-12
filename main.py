@@ -210,9 +210,6 @@ def getAvgTimeForShare(files: [[str]]) -> ShareTimes:
 
 			# If line contains details of found share, extract the time when the share was found
 			if matches:
-				# Increase total number of found shares so calculation is right
-				numberOfShares += 1
-
 				# Regex matches e.g.: 2021.01.12:09:00:37
 				datetimeRegex = re.compile('[0-9]{4}\.[0-9]{2}\.[0-9]{2}:[0-9]{2}:[0-9]{2}:[0-9]{2}')
 
@@ -225,10 +222,16 @@ def getAvgTimeForShare(files: [[str]]) -> ShareTimes:
 				# into consideration which does make the result slightly incorrect but makes it easier to calculate.
 				# TODO: Might be fixed later if I'm in the mood.
 				if lastFoundShareTime:
+					# Increase total number of found shares so calculation is right
+					numberOfShares += 1
+
+					# Calculate time since last share was found
 					timeSinceLastShare = (foundDatetime - lastFoundShareTime).total_seconds()
 					totalTimeMining += timeSinceLastShare
 					lastFoundShareTime = foundDatetime
 				else:
+					# Don't update the number of found shares so the deviation we get through this problem with
+					# not accounting for the first share is minimal
 					lastFoundShareTime = foundDatetime
 
 	avgTimePerShare = (totalTimeMining / numberOfShares)
