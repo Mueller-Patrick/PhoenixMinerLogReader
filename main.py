@@ -24,7 +24,7 @@ def readLog(filePaths: [str]):
 
 	# Go through every read line
 	for line in lines:
-		regex = re.compile('Share actual difficulty: [0-9]+([.][0-9])? [MGT]H')
+		regex = re.compile('Share actual difficulty: [0-9]+([.][0-9])? [A-Z]H')
 
 		matches = re.search(regex, line)
 
@@ -43,8 +43,11 @@ def readLog(filePaths: [str]):
 				difs.append(difInt / 1000)
 			elif 'GH' in currentMatch:
 				difs.append(difInt)
-			else:
+			elif 'TH' in currentMatch:
 				difs.append(difInt * 1000)
+			else:
+				print("Found something other than MH / GH / TH. Please verify that this is correct and report it as"
+					  + " an issue at https://github.com/Mueller-Patrick/PhoenixMinerLogReader/issues")
 
 	# Calculate average value
 	sum = 0
