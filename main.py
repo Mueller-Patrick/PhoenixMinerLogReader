@@ -56,23 +56,33 @@ def readLog(filePaths: [str]):
 	sum = 0
 	sortedDifs = difs.copy()
 	sortedDifs.sort(reverse=True)
-	for entry in sortedDifs[:round(len(difs)/10)]:
+	for entry in sortedDifs[:round(len(difs) / 10)]:
 		sum += entry
-	top10Avg = (sum / round(len(difs)/10)).__round__(AVERAGE_DECIMAL_COUNT)
+	top10Avg = (sum / round(len(difs) / 10)).__round__(AVERAGE_DECIMAL_COUNT)
 
 	# Set plot dpi to desired value
 	mpl.rcParams['figure.dpi'] = PLOT_DPI
 
 	# Draw the plot
+	drawPlot(difs, avgVal, top10Avg)
+	drawHistogram(difs)
+
+	# Print the list of difs
+	difs.sort(reverse=True)
+	print(difs)
+
+
+def drawPlot(difs, avgVal, top10Avg):
 	plt.plot(difs)
 	plt.axhline(avgVal, color='r')
 	plt.axhline(top10Avg, color='g')
 	plt.legend(['Difficulty', ('Avg = {} GH'.format(avgVal)), ('Top 10% Avg: {} GH'.format(top10Avg))])
 	plt.show(block=True)
 
-	# Print the list of difs
-	difs.sort(reverse=True)
-	print(difs)
+
+def drawHistogram(difs):
+	plt.hist(difs, bins=len(difs))
+	plt.show(blcok=True)
 
 
 if __name__ == "__main__":
