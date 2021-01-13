@@ -3,6 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 from datetime import datetime
+from scipy.ndimage.filters import gaussian_filter1d
 from ShareTimes import ShareTimes
 
 # Constants
@@ -195,6 +196,7 @@ def getAvgTimeForShare(files: [[str]]) -> ShareTimes:
 	"""
 	numberOfShares = 0  # The number of found shares
 	totalTimeMining = 0  # The total time spent mining to calculate avg per share later
+	searchTimes = [] # The search time for each share to plot it
 
 	for file in files:
 		# This resets the lastFoundShareTime every time a new log file is read.
@@ -228,6 +230,7 @@ def getAvgTimeForShare(files: [[str]]) -> ShareTimes:
 					# Calculate time since last share was found
 					timeSinceLastShare = (foundDatetime - lastFoundShareTime).total_seconds()
 					totalTimeMining += timeSinceLastShare
+					searchTimes.append(timeSinceLastShare)
 					lastFoundShareTime = foundDatetime
 				else:
 					# Don't update the number of found shares so the deviation we get through this problem with
@@ -238,8 +241,14 @@ def getAvgTimeForShare(files: [[str]]) -> ShareTimes:
 
 	retShareTime = ShareTimes(avgTimePerShare, totalTimeMining)
 
+	searchTimesSmoothed = gaussian_filter1d(searchTimes, sigma=5)
+	plt.plot(searchTimes)
+	plt.plot(searchTimesSmoothed, color='r')
+	plt.legend(['Search time (s)', 'Smoothed search time (s)'])
+	plt.show()
+
 	return retShareTime
 
 
 if __name__ == "__main__":
-	readLog(["log20210111_113044.txt", "log20210111_181307.txt", "log20210112_085832.txt"])
+	readLog([])
