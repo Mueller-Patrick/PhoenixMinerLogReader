@@ -108,18 +108,18 @@ def drawPlots(difs: [float]):
 	:param difs: The list of difficulties
 	"""
 	# Calculate average value
-	sum = 0
+	difficultySum = 0
 	for entry in difs:
-		sum += entry
-	avgVal = (sum / len(difs)).__round__(AVERAGE_DECIMAL_COUNT)
+		difficultySum += entry
+	avgVal = (difficultySum / len(difs)).__round__(AVERAGE_DECIMAL_COUNT)
 
 	# Calculate top 10% avg
-	sum = 0
+	difficultySum = 0
 	sortedDifs = difs.copy()
 	sortedDifs.sort(reverse=True)
 	for entry in sortedDifs[:round(len(difs) / 10)]:
-		sum += entry
-	top10Avg = (sum / round(len(difs) / 10)).__round__(AVERAGE_DECIMAL_COUNT)
+		difficultySum += entry
+	top10Avg = (difficultySum / round(len(difs) / 10)).__round__(AVERAGE_DECIMAL_COUNT)
 
 	# Set plot dpi to desired value
 	mpl.rcParams['figure.dpi'] = PLOT_DPI
@@ -190,7 +190,7 @@ def getAvgTimeForShare(files: [[str]]) -> ShareTimes:
 	"""
 	Calculates the average time spent to find a share. Also returns the total time spent mining
 
-	:param lines: The lines for each given log file
+	:param files: The lines for each given log file
 	:return: A ShareTimes object containing the average time per share and the total mining time
 	"""
 	numberOfShares = 0  # The number of found shares
@@ -242,4 +242,4 @@ def getAvgTimeForShare(files: [[str]]) -> ShareTimes:
 
 
 if __name__ == "__main__":
-	readLog([])
+	readLog(["log20210111_113044.txt", "log20210111_181307.txt", "log20210112_085832.txt"])
