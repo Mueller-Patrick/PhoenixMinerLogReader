@@ -155,10 +155,12 @@ def drawPlot(difs: [float], avgVal: float, top10Avg: float):
 	:param avgVal: The average of all difficulties
 	:param top10Avg: The average of the top 10 difficulties
 	"""
+	difsSmoothed = gaussian_filter1d(difs, sigma=100)
 	plt.plot(difs)
 	plt.axhline(avgVal, color='r')
 	plt.axhline(top10Avg, color='g')
-	plt.legend(['Difficulty', ('Avg = {} GH'.format(avgVal)), ('Top 10% Avg: {} GH'.format(top10Avg))])
+	plt.semilogy(difsSmoothed, color='orange')
+	plt.legend(['Difficulty', ('Avg = {} GH'.format(avgVal)), ('Top 10% Avg: {} GH'.format(top10Avg)), 'Difficulty trend line'])
 	plt.show(block=True)
 
 
