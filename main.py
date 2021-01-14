@@ -163,7 +163,8 @@ def drawPlot(difs: [float], avgVal: float, top10Avg: float):
 
 
 def drawHistogram(difs):
-	plt.hist(difs, bins=len(difs))
+	plt.hist(difs, bins=round(len(difs)/10), log=True)
+	plt.legend(['Amount of shares with this difficulty'])
 	plt.show(blcok=True)
 
 
@@ -196,7 +197,7 @@ def getAvgTimeForShare(files: [[str]]) -> ShareTimes:
 	"""
 	numberOfShares = 0  # The number of found shares
 	totalTimeMining = 0  # The total time spent mining to calculate avg per share later
-	searchTimes = [] # The search time for each share to plot it
+	searchTimes = []  # The search time for each share to plot it
 
 	for file in files:
 		# This resets the lastFoundShareTime every time a new log file is read.
